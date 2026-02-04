@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ร้านคอนแทคเลนส์</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #FAFAF5;
+            --text-color: #4B3621;
+            --rose-gold: #C2938D;
+            --gold-border: #D4AF37;
+            --white: #FFFFFF;
+            --green-line: #06C755;
+            --red-alert: #e74c3c;
+        }
+
+        body { font-family: 'Prompt', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; text-align: center; padding-bottom: 100px; }
+        
+        /* ปุ่มกดทั่วไป */
+        .btn-option {
+            display: block; width: 100%; max-width: 400px; margin: 15px auto; padding: 15px 20px;
+            background-color: var(--white); color: var(--text-color); border: 2px solid var(--rose-gold);
+            border-radius: 4px; font-size: 1.1rem; cursor: pointer; transition: all 0.2s ease;
+        }
+        .btn-option:hover { background-color: var(--rose-gold); color: var(--white); }
+
+        /* ปุ่มตะกร้าลอย (Floating Cart) */
+        .cart-float {
+            position: fixed; bottom: 30px; right: 30px; background: var(--text-color); color: white;
+            width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 900;
+        }
+        .cart-badge {
+            position: absolute; top: -5px; right: -5px; background: var(--red-alert); color: white;
+            font-size: 12px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Grid */
+        .diopter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 20px; }
+        .diopter-grid .btn-option { margin: 0; font-size: 0.9rem; padding: 10px; }
+
+        /* Gallery */
+        #product-gallery { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 20px; scroll-snap-type: x mandatory; }
+        #product-gallery img { min-width: 100%; border-radius: 8px; border: 1px solid var(--rose-gold); scroll-snap-align: center; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: white; padding: 25px; border-radius: 10px; width: 90%; max-width: 500px;
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;
+            position: relative;
+        }
+        
+        /* รายการในตะกร้า */
+        .cart-item {
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; font-size: 0.9rem;
+        }
+        .btn-remove { color: var(--red-alert); background: none; border: none; cursor: pointer; font-size: 1.2rem; }
+
+        /* ปุ่มต่างๆ ใน Modal */
+        .btn-green { background-color: var(--green-line); color: white; border: none; padding: 12px; width: 100%; border-radius: 50px; margin-top: 10px; cursor: pointer; font-size: 1.1rem; }
+        .btn-close { background: #ccc; color: #333; border: none; padding: 10px 20px; border-radius: 50px; margin-top: 10px; cursor: pointer; width: 100%; }
+        
+        .hidden { display: none !important; }
+
+        /* Admin Style */
+        .admin-trigger { position: fixed; bottom: 5px; left: 5px; opacity: 0.1; font-size: 10px; cursor: pointer; }
+        .admin-form input, .admin-form select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .code-box { background: #333; color: #0f0; padding: 10px; text-align: left; font-family: monospace; font-size: 0.8rem; overflow-x: auto; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 style="color: var(--rose-gold);">MY CONTACT LENS</h1>
+            <div style="height: 2px; width: 50px; background: var(--text-color); margin: 0 auto 40px auto;"></div>
+        </header>
+
+        <div id="page-home">
+            <h2>กรุณาเลือกหมวดหมู่</h2>
+            <button class="btn-option" onclick="goToPage('page-cat1-size')">1. คอนแทคเลนส์สายตาปกติ</button>
+            <button class="btn-option" onclick="goToPage('page-cat2-diopter')">2. คอนแทคเลนส์สายตาสั้น</button>
+            <button class="btn-option" onclick="showProduct('น้ำยาคอนแทคเลนส์', '150', 'น้ำยาคอนแทคเลนส์')">3. น้ำยาคอนแทคเลนส์</button>
+        </div>
+
+        <div id="page-cat1-size" class="hidden">
+            <h2>เลือกขนาดเลนส์ (สายตาปกติ)</h2>
+            <button class="btn-option" onclick="selectSize('เลนส์มินิ')">เลนส์มินิ</button>
+            <button class="btn-option" onclick="selectSize('เลนส์พอดีตา')">เลนส์พอดีตา</button>
+            <button class="btn-option" onclick="selectSize('เลนส์ตาโต')">เลนส์ตาโต</button>
+            <button class="btn-back" onclick="goToPage('page-home')">ย้อนกลับ</button>
+        </div>
+
+        <div id="page-cat1-color" class="hidden">
+            <h2>เลือกสีเลนส์ (<span id="selected-size-name"></span>)</h2>
+            <button class="btn-option" onclick="showProductWithDetail('สีเทา')">สีเทา</button>
+            <button class="btn-option" onclick="showProductWithDetail('สีน้ำตาล')">สีน้ำตาล</button>
+            <button class="btn-back" onclick="goToPage('page-cat1-size')">ย้อนกลับ</button>
+        </div>
+
+        <div id="page-cat2-diopter" class="hidden">
+            <h2>เลือกค่าสายตา</h2>
+            <div class="diopter-grid" id="diopter-list"></div>
+            <br>
+            <button class="btn-back" onclick="goToPage('page-home')">ย้อนกลับ</button>
+        </div>
+
+        <div id="page-product" class="hidden">
+            <h2 id="product-title">ชื่อสินค้า</h2>
+            <div id="product-gallery"></div>
+            <p style="text-align: center; color: #999; font-size: 0.8rem; margin-top:5px;">(เลื่อนเพื่อดูรูปเพิ่มเติม)</p>
+            <div class="price-tag" id="product-price">฿250</div>
+            <p id="product-desc">รายละเอียดสินค้า: เลนส์นิ่ม ใส่สบาย ค่าอมน้ำสูง เหมาะสำหรับดวงตาที่บอบบาง</p>
+            
+            <button class="btn-option" onclick="addToCart()" style="background-color: var(--text-color); color: white; border: none;">
+                <i class="fas fa-cart-plus"></i> เพิ่มลงตะกร้า
+            </button>
+            <button class="btn-back" onclick="goBackFromProduct()">ย้อนกลับ</button>
+        </div>
+    </div>
+
+    <div class="cart-float" onclick="openCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <div class="cart-badge" id="cart-count">0</div>
+    </div>
+
+    <div id="cart-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 style="color: var(--text-color);">ตะกร้าสินค้า</h3>
+            <div id="cart-items" style="text-align: left; max-height: 200px; overflow-y: auto;">
+                <p style="text-align:center; color:#999;">ไม่มีสินค้าในตะกร้า</p>
+            </div>
+            <div style="border-top: 2px dashed #ddd; margin-top: 15px; padding-top: 10px; display:flex; justify-content:space-between; font-weight:bold;">
+                <span>ยอดรวมทั้งหมด</span>
+                <span id="cart-total" style="color: var(--rose-gold);">฿0</span>
+            </div>
+            
+            <button class="btn-green" onclick="checkout()">ชำระเงิน</button>
+            <button class="btn-close" onclick="closeModal('cart-modal')">เลือกซื้อต่อ</button>
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="modal-overlay hidden">
+        <div class="modal-box" style="border: 2px solid var(--green-line);">
+            <i class="fas fa-camera" style="font-size: 3rem; color: var(--text-color); margin-bottom: 15px;"></i>
+            <h3 style="color: var(--text-color);">ขั้นตอนการชำระเงิน</h3>
+            <p style="color: red; font-weight: bold;">กรุณาแคปหน้าจอนี้ที่มีรายการสินค้า</p>
+            <p>และกดปุ่มด้านล่างเพื่อส่งรูปผ่าน LINE</p>
+            
+            <div style="background: #f9f9f9; padding: 10px; border-radius: 8px; margin: 10px 0; text-align: left; font-size: 0.9rem;">
+                <strong>รายการสั่งซื้อ:</strong>
+                <div id="checkout-list"></div>
+                <hr>
+                <div style="text-align: right; font-weight: bold;">รวม: <span id="checkout-total"></span></div>
+            </div>
+
+            <button class="btn-green" onclick="openLine()">
+                <i class="fab fa-line"></i> ส่งไลน์หาแอดมิน
+            </button>
+            <button class="btn-close" onclick="closeModal('checkout-modal')">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+
+    <div class="admin-trigger" onclick="openAdminLogin()">Admin</div>
+
+    <div id="admin-login-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>เข้าสู่ระบบแอดมิน</h3>
+            <div class="admin-form">
+                <input type="text" id="admin-user" placeholder="Username">
+                <input type="password" id="admin-pass" placeholder="Password">
+                <button class="btn-option" onclick="checkLogin()" style="background: var(--text-color); color: white;">เข้าสู่ระบบ</button>
+                <button class="btn-close" onclick="closeModal('admin-login-modal')">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-panel-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>จัดการสินค้า (ตัวช่วยสร้างโค้ด)</h3>
+            <p style="font-size: 0.8rem; color: red;">*เนื่องจากไม่มีเซิร์ฟเวอร์ กรุณากรอกข้อมูลเพื่อสร้างโค้ด แล้วนำไปแปะในไฟล์ index.html</p>
+            
+            <div class="admin-form">
+                <input type="text" id="new-name" placeholder="ชื่อสินค้า (เช่น เลนส์มินิ สีฟ้า)">
+                <input type="number" id="new-price" placeholder="ราคา (บาท)">
+                <input type="text" id="new-img" placeholder="ชื่อไฟล์รูป (เช่น blue.jpg)">
+                <select id="new-category">
+                    <option value="default">ทั่วไป</option>
+                    <option value="short_sight">สายตาสั้น</option>
+                </select>
+                <button class="btn-green" onclick="generateCode()">สร้างโค้ดสินค้า</button>
+            </div>
+
+            <div id="code-output" class="code-box"></div>
+            <button class="btn-close" onclick="closeModal('admin-panel-modal')">ปิด</button>
+        </div>
+    </div>
+
+
+    <script>
+        // === ตั้งค่า LINE ID ===
+        const YOUR_LINE_ID = "@013adkif"; 
+
+        // === ข้อมูลสินค้า (Database จำลอง) ===
+        // คุณสามารถเพิ่มรายการสินค้าตรงนี้ได้เลยตามรูปแบบ
+        const productImages = {
+            "default": ["default.jpg"], 
+            "เลนส์มินิ (สีเทา)": ["mini_gray_1.jpg", "mini_gray_2.jpg"],
+            "เลนส์มินิ (สีน้ำตาล)": ["mini_brown_1.jpg", "mini_brown_2.jpg"],
+            "เลนส์พอดีตา (สีเทา)": ["fit_gray.jpg"],
+            "เลนส์พอดีตา (สีน้ำตาล)": ["fit_brown.jpg"],
+            "เลนส์ตาโต (สีเทา)": ["big_gray.jpg"],
+            "เลนส์ตาโต (สีน้ำตาล)": ["big_brown.jpg"],
+            "น้ำยาคอนแทคเลนส์": ["water1.jpg"],
+            "สายตาสั้น_ทั้งหมด": ["short_sight_box.jpg"]
+        };
+
+        // ตัวแปรระบบ
+        let cart = [];
+        let historyStack = ['page-home'];
+        let currentProduct = {};
+        
+        // --- 1. ระบบนำทางและแสดงสินค้า ---
+        const diopterContainer = document.getElementById('diopter-list');
+        const diopters = [50, 100, 125, 150, 175, 200, 225, 250, 300, 350, 375, 400, 425, 450, 475, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000];
+
+        diopters.forEach(val => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-option';
+            btn.innerText = `-${val}`;
+            btn.onclick = () => showProduct(`คอนแทคเลนส์สายตาสั้น -${val}`, '250', 'short_sight'); 
+            diopterContainer.appendChild(btn);
+        });
+
+        function goToPage(pageId) {
+            document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+            if (pageId !== historyStack[historyStack.length - 1]) historyStack.push(pageId);
+        }
+
+        function selectSize(sizeName) {
+            document.getElementById('selected-size-name').innerText = sizeName;
+            // เก็บ state ชั่วคราว
+            currentProduct.tempSize = sizeName;
+            goToPage('page-cat1-color');
+        }
+
+        function showProductWithDetail(color) {
+            const size = currentProduct.tempSize || 'สินค้า';
+            const fullName = `${size} (${color})`; 
+            const displayTitle = `คอนแทคเลนส์ปกติ ${size} (${color})`; 
+            showProduct(displayTitle, '250', fullName);
+        }
+
+        function showProduct(title, price, imageKey) {
+            currentProduct = { name: title, price: parseInt(price), key: imageKey };
+            
+            document.getElementById('product-title').innerText = title;
+            document.getElementById('product-price').innerText = `฿${price}`;
+            
+            // Gallery Logic
+            const gallery = document.getElementById('product-gallery');
+            gallery.innerHTML = ''; 
+            
+            let imagesToShow = productImages[imageKey] || 
+                               (imageKey === 'short_sight' ? productImages["สายตาสั้น_ทั้งหมด"] : productImages["default"]);
+            
+            if (!imagesToShow) imagesToShow = ["default.jpg"]; // Fallback
+
+            imagesToShow.forEach(fileName => {
+                const img = document.createElement('img');
+                img.src = fileName;
+                gallery.appendChild(img);
+            });
+
+            goToPage('page-product');
+        }
+
+        function goBackFromProduct() {
+            historyStack.pop();
+            const prev = historyStack[historyStack.length - 1] || 'page-home';
+            goToPage(prev);
+        }
+
+        // --- 2. ระบบตะกร้าสินค้า ---
+        function addToCart() {
+            cart.push({ ...currentProduct });
+            updateCartUI();
+            alert(`เพิ่ม "${currentProduct.name}" ลงตะกร้าแล้ว`);
+            goBackFromProduct(); // กลับไปเลือกต่อ
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = cart.length;
+            
+            const cartList = document.getElementById('cart-items');
+            cartList.innerHTML = '';
+            let total = 0;
+
+            if(cart.length === 0) {
+                cartList.innerHTML = '<p style="text-align:center; color:#999;">ไม่มีสินค้าในตะกร้า</p>';
+            } else {
+                cart.forEach((item, index) => {
+                    total += item.price;
+                    cartList.innerHTML += `
+                        <div class="cart-item">
+                            <div>${item.name}</div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span>฿${item.price}</span>
+                                <button class="btn-remove" onclick="removeFromCart(${index})"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('cart-total').innerText = `฿${total}`;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function openCart() {
+            document.getElementById('cart-modal').classList.remove('hidden');
+        }
+
+        function checkout() {
+            if(cart.length === 0) { alert('กรุณาเลือกสินค้าก่อน'); return; }
+            
+            closeModal('cart-modal');
+            
+            // สร้างรายการสรุปเพื่อแคปจอ
+            const checkoutList = document.getElementById('checkout-list');
+            checkoutList.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                total += item.price;
+                checkoutList.innerHTML += `<div>- ${item.name} (฿${item.price})</div>`;
+            });
+            document.getElementById('checkout-total').innerText = `฿${total}`;
+
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function openLine() {
+            // สร้างข้อความเบื้องต้น (เผื่อลูกค้าลืมแคป)
+            let msg = "ต้องการสั่งซื้อสินค้า:\n";
+            let total = 0;
+            cart.forEach(item => {
+                msg += `- ${item.name}\n`;
+                total += item.price;
+            });
+            msg += `\nยอดรวม: ${total} บาท\n(แนบรูปรายการสินค้ามาแล้ว)`;
+            
+            const encodedMsg = encodeURIComponent(msg);
+            // ลิงก์ไปหน้าแชท
+            window.open(`https://line.me/R/oaMessage/${YOUR_LINE_ID}/?${encodedMsg}`, '_blank');
+        }
+
+        // --- 3. ระบบ Modal General ---
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // --- 4. ระบบ Admin (จำลอง) ---
+        function openAdminLogin() {
+            document.getElementById('admin-login-modal').classList.remove('hidden');
+        }
+
+        function checkLogin() {
+            const u = document.getElementById('admin-user').value;
+            const p = document.getElementById('admin-pass').value;
+            
+            if(u === 'pondlincontactlens' && p === '0908215240za') {
+                closeModal('admin-login-modal');
+                document.getElementById('admin-panel-modal').classList.remove('hidden');
+                // ล้างค่า
+                document.getElementById('admin-user').value = '';
+                document.getElementById('admin-pass').value = '';
+            } else {
+                alert('รหัสผ่านไม่ถูกต้อง');
+            }
+        }
+
+        function generateCode() {
+            const name = document.getElementById('new-name').value;
+            const price = document.getElementById('new-price').value;
+            const img = document.getElementById('new-img').value;
+            const cat = document.getElementById('new-category').value;
+            
+            if(!name || !price) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+
+            // สร้างโค้ดสำหรับให้ User นำไปแปะ
+            let code = `
+"${name}": ["${img}"],
+
+<button class="btn-option" onclick="showProduct('${name}', '${price}', '${name}')">${name}</button>
+            `;
+
+            const output = document.getElementById('code-output');
+            output.innerText = code.trim();
+            output.style.display = 'block';
+        }
+
+    </script>
+    
+    <style>.btn-back { display: inline-block; width: auto; min-width: 100px; margin-top:20px; }</style>
+</body>
+</html>
